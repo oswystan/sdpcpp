@@ -30,25 +30,25 @@
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_DEBUG
-#define logd(fmt, ...) printf("[D/"LOG_TAG"]"fmt"\n", ##__VA_ARGS__);
+#define logd(fmt, ...) printf("[D/" LOG_TAG "]" fmt "\n", ##__VA_ARGS__);
 #else
 #define logd(fmt, ...)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_INFO
-#define logi(fmt, ...) printf("[I/"LOG_TAG"]"fmt"\n", ##__VA_ARGS__);
+#define logi(fmt, ...) printf("[I/" LOG_TAG "]" fmt "\n", ##__VA_ARGS__);
 #else
 #define logi(fmt, ...)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_WARN
-#define logw(fmt, ...) printf("[W/"LOG_TAG"]"fmt"\n", ##__VA_ARGS__);
+#define logw(fmt, ...) printf("[W/" LOG_TAG "]" fmt "\n", ##__VA_ARGS__);
 #else
 #define logw(fmt, ...)
 #endif
 
 #if LOG_LEVEL >= LOG_LEVEL_ERROR
-#define loge(fmt, ...) printf("[E/"LOG_TAG"]"fmt"\n", ##__VA_ARGS__);
+#define loge(fmt, ...) printf("[E/" LOG_TAG "]" fmt "\n", ##__VA_ARGS__);
 #else
 #define loge(fmt, ...)
 #endif

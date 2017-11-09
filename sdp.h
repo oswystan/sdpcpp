@@ -103,31 +103,33 @@ enum ECandiType {
 //               interfaces
 //
 //======================================
+class SdpRoot;
 class SdpNode;
 class SdpWriter;
 class SdpReader;
 class SdpMedia;
+class SdpAttr;
 
 class SdpReader {
 public:
-    int parse(std::string& s, SdpNode& sdp);
+    int parse(std::string& s, SdpRoot& sdp);
 };
 class SdpWriter {
 public:
-    int writeTo(std::string& s, SdpNode& sdp);
+    int writeTo(std::string& s, SdpRoot& sdp);
 };
 
 class SdpNode {
 public:
     SdpNode(ENodeType t) : nodeType(t) {}
-    virtual ~SdpNode() {}
-    virtual void dump() {}
+    virtual ~SdpNode();
+    virtual void dump();
 
     int add(SdpNode* n);
     int remove(SdpNode* n);
 
     int find(ENodeType t,  SdpNode*& n);
-    int find(EAttrType t,  SdpNode*& n);
+    int find(EAttrType t,  SdpAttr*& n);
     int find(EMediaType t, SdpMedia*& n);
     int find(ENodeType t,  std::vector<SdpNode*> v);
     int find(EAttrType t,  std::vector<SdpNode*> v);
@@ -137,7 +139,16 @@ public:
     ENodeType nodeType;
     std::vector<SdpNode*> children;
 };
+class SdpRoot : public SdpNode {
+public:
+    SdpRoot() : SdpNode(SDP_NODE_SESSION) {}
+};
 
+//======================================
+//
+// sub class used for reader and writer
+//
+//======================================
 class SdpVersion : public SdpNode {
 public:
     SdpVersion() : SdpNode(SDP_NODE_VERSION) {}
@@ -245,7 +256,6 @@ public:
     std::string extName;
     std::string extVal;
 };
-
 
 }; //namespace sdp
 

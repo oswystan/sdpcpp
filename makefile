@@ -19,7 +19,7 @@ ld_flags :=
 all: $(bin)
 
 $(bin): $(obj)
-	@gcc $^ -o $(bin) $(ld_flags)
+	@g++ $^ -o $(bin) $(ld_flags)
 	@strip $@
 	@echo "[gen] "$@
 %.o:%.c
