@@ -92,6 +92,7 @@ enum EAttrType {
 
     //rfc3605
     SDP_ATTR_RTCP,
+    //rfc5245
     SDP_ATTR_CANDIDATE,
     SDP_ATTR_ICE_UFRAG,
     SDP_ATTR_ICE_PWD,
@@ -133,6 +134,8 @@ public:
     virtual ~SdpNode();
     virtual void dump();
 
+    virtual SdpNode* clone() {return new SdpNode(SDP_NODE_NONE);}
+
     int add(SdpNode* n);
     int remove(SdpNode* n);
 
@@ -166,15 +169,24 @@ public:
 // sub class used for reader and writer
 //
 //======================================
+class SdpNone : public SdpNode {
+public:
+    SdpNone() : SdpNode(SDP_NODE_NONE) {}
+    SdpNode* clone() {return new SdpNone; }
+    int parse(std::string& l) { return -1; }
+};
 class SdpVersion : public SdpNode {
 public:
     SdpVersion() : SdpNode(SDP_NODE_VERSION) {}
+    SdpNode* clone() {return new SdpVersion;}
+    int parse(std::string& l) { return 0;}
 public:
     int version;
 };
 class SdpOrigin : public SdpNode {
 public:
     SdpOrigin() : SdpNode(SDP_NODE_ORIGIN) {}
+    SdpNode* clone() {return new SdpOrigin;}
     int parse(std::string& l);
 public:
     std::string userName;
@@ -187,6 +199,7 @@ public:
 class SdpSessName : public SdpNode {
 public:
     SdpSessName() : SdpNode(SDP_NODE_SESSION_NAME) {}
+    SdpNode* clone() {return new SdpSessName;}
     int parse(std::string& l);
 public:
     std::string name;
@@ -194,6 +207,7 @@ public:
 class SdpSessInfo : public SdpNode {
 public:
     SdpSessInfo() : SdpNode(SDP_NODE_SESSION_INFORMATION) {}
+    SdpNode* clone() {return new SdpSessInfo;}
     int parse(std::string& l);
 public:
     std::string info;
@@ -202,6 +216,7 @@ class SdpUri : public SdpNode {
 public:
     SdpUri() : SdpNode(SDP_NODE_URI) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpUri;}
 public:
     std::string uri;
 };
@@ -209,6 +224,7 @@ class SdpEmail : public SdpNode {
 public:
     SdpEmail() : SdpNode(SDP_NODE_EMAIL) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpEmail;}
 public:
     std::string email;
 };
@@ -216,6 +232,7 @@ class SdpPhone : public SdpNode {
 public:
     SdpPhone() : SdpNode(SDP_NODE_PHONE) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpPhone;}
 public:
     std::string phone;
 };
@@ -223,6 +240,7 @@ class SdpTime : public SdpNode {
 public:
     SdpTime() : SdpNode(SDP_NODE_TIME) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpTime;}
 public:
     uint64_t start;
     uint64_t stop;
@@ -231,6 +249,7 @@ class SdpConn : public SdpNode {
 public:
     SdpConn() : SdpNode(SDP_NODE_CONNECTION) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpConn;}
 public:
     ENetType    netType;
     EAddrType   addrType;
@@ -240,6 +259,7 @@ class SdpMedia : public SdpNode {
 public:
     SdpMedia() : SdpNode(SDP_NODE_CONNECTION) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpMedia;}
     int filter(int pt);
     int reject(int pt);
 
@@ -253,6 +273,7 @@ class SdpAttr : public SdpNode {
 public:
     SdpAttr(EAttrType t) : SdpNode(SDP_NODE_ATTRIBUTE), attrType(t) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpAttr(SDP_ATTR_NONE);}
 public:
     EAttrType   attrType;
     std::string name;
@@ -262,6 +283,7 @@ class SdpAttrRTCP : public SdpAttr {
 public:
     SdpAttrRTCP() : SdpAttr(SDP_ATTR_RTCP) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpAttrRTCP;}
 public:
     uint16_t    port;
     ENetType    netType;
@@ -272,6 +294,7 @@ class SdpAttrCandi : public SdpAttr {
 public:
     SdpAttrCandi() : SdpAttr(SDP_ATTR_CANDIDATE) {}
     int parse(std::string& l);
+    SdpNode* clone() {return new SdpAttrCandi;}
 public:
     std::string foundation;
     uint64_t    compID;
