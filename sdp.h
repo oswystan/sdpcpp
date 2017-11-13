@@ -266,7 +266,7 @@ public:
 };
 class SdpMedia : public SdpNode {
 public:
-    SdpMedia() : SdpNode(SDP_NODE_CONNECTION) {}
+    SdpMedia() : SdpNode(SDP_NODE_MEDIA) {}
     SdpNode* clone() {return new SdpMedia;}
     int parse(std::string& l);
     int write(std::string& l);

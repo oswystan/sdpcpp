@@ -25,6 +25,7 @@ namespace sdp {
 //==================================================
 #define _UNUSED_ __attribute__((unused))
 #define BUILD_TYPE(s,t,n) {.type = t,  .str = s, .node = new n}
+#define BUILD_TYPESTR(s,t) {.type = t,  .str = s, .node = NULL}
 #define ARR_LEN(x) (sizeof(x)/sizeof(x[0]))
 struct Type2Str {
     int type;
@@ -74,6 +75,34 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=fingerprint:",   SDP_ATTR_FINGERPRINT, SdpAttr(SDP_ATTR_FINGERPRINT)),
     BUILD_TYPE("a=msid-semantic:", SDP_ATTR_MSID_SEMANTIC, SdpAttr(SDP_ATTR_MSID_SEMANTIC)),
 };
+Type2Str gnets[] = {
+    BUILD_TYPESTR("IN", SDP_NET_IN)
+};
+Type2Str gaddrs[] = {
+    BUILD_TYPESTR("IP4", SDP_ADDR_IP4),
+    BUILD_TYPESTR("IP6", SDP_ADDR_IP6)
+};
+Type2Str gmedias[] = {
+    BUILD_TYPESTR("video", SDP_MEDIA_VIDEO),
+    BUILD_TYPESTR("audio", SDP_MEDIA_AUDIO),
+    BUILD_TYPESTR("text", SDP_MEDIA_TEXT),
+    BUILD_TYPESTR("application", SDP_MEDIA_APPLICATION),
+    BUILD_TYPESTR("message", SDP_MEDIA_MESSAGE)
+};
+Type2Str gprotos[] = {
+    BUILD_TYPESTR("udp", SDP_PROTO_UDP),
+    BUILD_TYPESTR("RTP/AVP", SDP_PROTO_RTP_AVP),
+    BUILD_TYPESTR("RTP/SAVP", SDP_PROTO_RTP_SAVP),
+    BUILD_TYPESTR("RTP/SAVPF", SDP_PROTO_RTP_SAVPF),
+    BUILD_TYPESTR("UDP/TLS/RTP/SAVPF", SDP_PROTO_RTP_UDP2SAVPF),
+};
+Type2Str gcandis[] = {
+    BUILD_TYPESTR("host", SDP_CANDI_HOST),
+    BUILD_TYPESTR("srflx", SDP_CANDI_SRFLX),
+    BUILD_TYPESTR("prflx", SDP_CANDI_PRFLX),
+    BUILD_TYPESTR("relay", SDP_CANDI_RELAY),
+};
+
 static int str2type(const char* s, Type2Str* ts, unsigned int size) {
     for (unsigned int i = 0; i < size; i++) {
         if (strncmp(ts[i].str, s, strlen(ts[i].str)) == 0) {
@@ -149,18 +178,25 @@ public:
     LineReader(std::string& s): val(s), pos(0) {}
     void skip(char delim = ' ');
     void forward(unsigned int to);
+
     std::string readStr(char delim = ' ');
     int readInt(char delim = ' ');
     uint64_t readUint64(char delim = ' ');
+
+    ENetType   readNetType(char delim = ' ');
+    EAddrType  readAddrType(char delim = ' ');
+    EMediaType readMediaType(char delim = ' ');
+    EProtoType readProtoType(char delim = ' ');
+    ECandiType readCandiType(char delim = ' ');
 private:
     std::string readToken(char delim = ' ');
 
 public:
     std::string& val;
-    unsigned int pos;
+    size_t pos;
 };
 void LineReader::skip(char delim) {
-    unsigned int i = val.find_first_of(delim, pos);
+    size_t i = val.find_first_of(delim, pos);
     if (i != std::string::npos) {
         pos = i+1;
     } else {
@@ -175,14 +211,14 @@ void LineReader::forward(unsigned int to) {
     }
 }
 std::string LineReader::readToken(char delim) {
-    unsigned int old = pos;
-    unsigned int i = val.find_first_of(delim, pos);
+    size_t old = pos;
+    size_t i = val.find_first_of(delim, pos);
     if (i != std::string::npos) {
         pos = i+1;
-        return val.substr(old, i);
+        return val.substr(old, i-old);
     } else {
         pos = val.size();
-        return val.substr(old, i);
+        return val.substr(old, pos-old);
     }
 }
 std::string LineReader::readStr(char delim) {
@@ -218,10 +254,66 @@ uint64_t LineReader::readUint64(char delim) {
             throw ParseException("Not a digital");
             break;
         }
+        it++;
     }
     return strtoull(str.c_str(), NULL, 10);
 }
 
+ENetType LineReader::readNetType(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    int t = str2type(str.c_str(), gnets, ARR_LEN(gnets));
+    if (0 == t) {
+        throw ParseException("unknow net type");
+    }
+    return (ENetType)t;
+}
+EAddrType  LineReader::readAddrType(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    int t = str2type(str.c_str(), gaddrs, ARR_LEN(gaddrs));
+    if (0 == t) {
+        throw ParseException("unknow addr type");
+    }
+    return (EAddrType)t;
+}
+EMediaType LineReader::readMediaType(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    int t = str2type(str.c_str(), gmedias, ARR_LEN(gmedias));
+    if (0 == t) {
+        throw ParseException("unknow media type");
+    }
+    return (EMediaType)t;
+}
+EProtoType LineReader::readProtoType(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    int t = str2type(str.c_str(), gprotos, ARR_LEN(gprotos));
+    if (0 == t) {
+        throw ParseException("unknow proto type");
+    }
+    return (EProtoType)t;
+}
+ECandiType LineReader::readCandiType(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    int t = str2type(str.c_str(), gcandis, ARR_LEN(gcandis));
+    if (0 == t) {
+        throw ParseException("unknow candidate type");
+    }
+    return (ECandiType)t;
+}
 //==================================================
 //     sdp reader and writer
 //==================================================
@@ -243,14 +335,14 @@ int SdpReader::parse(std::string& s, SdpRoot& root) {
         //create node
         nType = SdpFactory::getNodeType(lines[i]);
         if (nType == SDP_NODE_NONE) {
-            loge("invalid sdp: [%s] @ %d", lines[i].c_str(), i+1);
+            loge("invalid sdp: [%s] @ line: %d", lines[i].c_str(), i+1);
             return -1;
         }
         if (nType != SDP_NODE_ATTRIBUTE) {
             node = SdpFactory::createNode(nType);
             ret = node->parse(lines[i]);
             if (ret != 0) {
-                loge("fail to parse: [%s] @ %d", lines[i].c_str(), i+1);
+                loge("fail to parse: [%s] @ line: %d", lines[i].c_str(), i+1);
                 delete node;
                 return -1;
             }
@@ -266,13 +358,13 @@ int SdpReader::parse(std::string& s, SdpRoot& root) {
         //create attributes if node type is SDP_ATTRIBUTE
         aType = SdpFactory::getAttrType(lines[i]);
         if (aType == SDP_ATTR_NONE) {
-            loge("invalid sdp: [%s] @ %d", lines[i].c_str(), i+1);
+            loge("invalid sdp: [%s] @ line: %d", lines[i].c_str(), i+1);
             return -1;
         }
         node = SdpFactory::createAttr(aType);
         ret = node->parse(lines[i]);
         if (ret != 0) {
-            loge("fail to parse: [%s] @ %d", lines[i].c_str(), i+1);
+            loge("fail to parse: [%s] @ line: %d", lines[i].c_str(), i+1);
             delete node;
             return -1;
         }
@@ -422,37 +514,123 @@ int SdpVersion::parse(std::string& l) {
     try {
         version = lr.readInt();
     } catch (std::exception& e) {
-        loge("%s", e.what());
+        loge("pos[%lu]:%s", lr.pos, e.what());
         return -1;
     }
     return 0;
 }
 int SdpOrigin::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        userName = lr.readStr();
+        sid = lr.readStr();
+        sessVersion = lr.readUint64();
+        netType = lr.readNetType();
+        addrType = lr.readAddrType();
+        addr = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpSessName::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        name = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpSessInfo::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        info = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpUri::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        uri = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpEmail::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        email = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpPhone::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        phone = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpTime::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        start = lr.readUint64();
+        stop = lr.readUint64();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpConn::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        netType = lr.readNetType();
+        addrType = lr.readAddrType();
+        addr = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpMedia::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        mediaType = lr.readMediaType();
+        port = lr.readInt();
+        proto = lr.readProtoType();
+        while(lr.pos < lr.val.size()-1) {
+            int pload = lr.readInt();
+            pt.push_back(pload);
+        }
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpAttr::parse(std::string& l) {
     return -1;
@@ -472,31 +650,80 @@ int SdpVersion::write(std::string& l) {
     return 0;
 }
 int SdpOrigin::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << userName << " "
+        << sid << " "
+        << sessVersion << " "
+        << type2str(netType, gnets, ARR_LEN(gnets)) << " "
+        << type2str(addrType, gaddrs, ARR_LEN(gaddrs)) << " "
+        << addr << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpSessName::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << name << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpSessInfo::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << info << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpUri::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << uri << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpEmail::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << email << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpPhone::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << phone << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpTime::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << start << " " << stop << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpConn::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << type2str(netType, gnets, ARR_LEN(gnets)) << " "
+        << type2str(addrType, gaddrs, ARR_LEN(gaddrs)) << " "
+        << addr << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpMedia::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << type2str(mediaType, gmedias, ARR_LEN(gmedias)) << " "
+        << port << " "
+        << type2str(proto, gprotos, ARR_LEN(gprotos));
+    for (unsigned int i = 0; i < pt.size(); i++) {
+        ss << " " << pt[i];
+    }
+    ss << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpAttr::write(std::string& l) {
     return -1;
