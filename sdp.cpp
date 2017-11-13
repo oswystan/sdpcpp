@@ -55,7 +55,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=tool:",          SDP_ATTR_TOOL, SdpAttr(SDP_ATTR_TOOL)),
     BUILD_TYPE("a=ptime:",         SDP_ATTR_PTIME, SdpAttr(SDP_ATTR_PTIME)),
     BUILD_TYPE("a=maxptime:",      SDP_ATTR_MAXPTIME, SdpAttr(SDP_ATTR_MAXPTIME)),
-    BUILD_TYPE("a=rtpmap:",        SDP_ATTR_RTPMAP, SdpAttr(SDP_ATTR_RTPMAP)),
+    BUILD_TYPE("a=rtpmap:",        SDP_ATTR_RTPMAP, SdpAttrRtpMap),
     BUILD_TYPE("a=recvonly",       SDP_ATTR_RECVONLY, SdpAttr(SDP_ATTR_RECVONLY)),
     BUILD_TYPE("a=sendrecv",       SDP_ATTR_SENDRECV, SdpAttr(SDP_ATTR_SENDRECV)),
     BUILD_TYPE("a=sendonly",       SDP_ATTR_SENDONLY, SdpAttr(SDP_ATTR_SENDONLY)),
@@ -637,7 +637,7 @@ int SdpMedia::parse(std::string& l) {
         proto = lr.readProtoType();
         while(lr.pos < lr.val.size()) {
             int pload = lr.readInt();
-            pt.push_back(pload);
+            supportedPTs.push_back(pload);
         }
     } catch (std::exception& e) {
         loge("pos[%lu]:%s", lr.pos, e.what());
@@ -652,6 +652,21 @@ int SdpAttr::parse(std::string& l) {
         val = "";
     } else {
         val = lr.val.substr(lr.pos);
+    }
+    return 0;
+}
+int SdpAttrRtpMap::parse(std::string& l) {
+    LineReader lr(l);
+    lr.skip(':');
+    try {
+        pt = lr.readInt();
+        enc = lr.readStr();
+        if (lr.pos < lr.val.size()) {
+            param = lr.readStr();
+        }
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
     }
     return 0;
 }
@@ -776,8 +791,8 @@ int SdpMedia::write(std::string& l) {
         << type2str(mediaType, gmedias, ARR_LEN(gmedias)) << " "
         << port << " "
         << type2str(proto, gprotos, ARR_LEN(gprotos));
-    for (unsigned int i = 0; i < pt.size(); i++) {
-        ss << " " << pt[i];
+    for (unsigned int i = 0; i < supportedPTs.size(); i++) {
+        ss << " " << supportedPTs[i];
     }
     ss << "\r\n";
     l += ss.str();
@@ -792,6 +807,18 @@ int SdpAttr::write(std::string& l) {
     ss << type2str(attrType, gattrs, ARR_LEN(gattrs));
     if (val.size() > 0) {
         ss << val;
+    }
+    ss << "\r\n";
+    l += ss.str();
+    return 0;
+}
+int SdpAttrRtpMap::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+        << pt << " "
+        << enc;
+    if (param.size()) {
+        ss << " " << param;
     }
     ss << "\r\n";
     l += ss.str();
@@ -831,13 +858,34 @@ int SdpAttrCandi::write(std::string& l) {
 }
 
 int SdpMedia::filter(int pt) {
-    return -1;
+    for(unsigned int i=supportedPTs.size()-1; i>0; i--) {
+        if (supportedPTs[i] == pt) {
+            supportedPTs.erase(supportedPTs.begin()+i);
+        }
+    }
+    return 0;
 }
-int SdpMedia::reject(int pt) {
-    return -1;
+int SdpMedia::reject() {
+    port = 0;
+    return 0;
 }
 int SdpMedia::getPT(std::string& codec) {
-    return -1;
+    int pt = -1;
+    auto matcher = [&pt, &codec](SdpNode* n) {
+        if (n->nodeType != SDP_NODE_ATTRIBUTE) {
+            return;
+        }
+        SdpAttr* attr = (SdpAttr*)n;
+        if (attr->attrType != SDP_ATTR_RTPMAP) {
+            return;
+        }
+        SdpAttrRtpMap* rtpmap = (SdpAttrRtpMap*)attr;
+        if (rtpmap->enc.find(codec) != std::string::npos) {
+            pt = rtpmap->pt;
+        }
+    };
+    std::for_each(children.begin(), children.end(), matcher);
+    return pt;
 }
 
 

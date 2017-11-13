@@ -286,13 +286,13 @@ public:
     int write(std::string& l);
 
     int filter(int pt);
-    int reject(int pt);
+    int reject();
     int getPT(std::string& codec);
 public:
     EMediaType       mediaType;
     uint16_t         port;
     EProtoType       proto;
-    std::vector<int> pt;
+    std::vector<int> supportedPTs;
 };
 class SdpAttr : public SdpNode {
 public:
@@ -303,6 +303,17 @@ public:
 public:
     EAttrType   attrType;
     std::string val;
+};
+class SdpAttrRtpMap : public SdpAttr {
+public:
+    SdpAttrRtpMap() : SdpAttr(SDP_ATTR_RTPMAP) {}
+    SdpNode* clone() {return new SdpAttrRtpMap;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    int pt;
+    std::string enc;
+    std::string param;
 };
 class SdpAttrRTCP : public SdpAttr {
 public:
