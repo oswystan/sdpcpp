@@ -34,5 +34,9 @@ clean:
 	@echo "cleaning..."
 	@rm -f *.o $(bin)
 	@echo "done."
+test: all
+	@echo "testing ..."
+	@./main
+	@echo "done."
 
 #######################################################################

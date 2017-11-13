@@ -633,13 +633,58 @@ int SdpMedia::parse(std::string& l) {
     return 0;
 }
 int SdpAttr::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip(':');
+    if (lr.pos >= lr.val.size()) {
+        val = "";
+    } else {
+        val = lr.val.substr(lr.pos);
+    }
+    return 0;
 }
 int SdpAttrRTCP::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip(':');
+    try {
+        port = lr.readInt();
+        netType = lr.readNetType();
+        addrType = lr.readAddrType();
+        addr = lr.readStr();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpAttrCandi::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    std::string tmp;
+    lr.skip(':');
+    try {
+        foundation = lr.readStr();
+        compID = lr.readUint64();
+        transport = lr.readStr();
+        priority = lr.readUint64();
+        addr = lr.readStr();
+        port = lr.readInt();
+        lr.skip(' ');
+        candiType = lr.readCandiType();
+        while(lr.pos < lr.val.size()) {
+            tmp = lr.readStr();
+            if (tmp == "raddr") {
+                relAddr = lr.readStr();
+                lr.skip(' ');
+                relPort = lr.readInt();
+            } else {
+                extName = tmp;
+                extVal = lr.readStr();
+            }
+        }
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
 }
 
 int SdpVersion::write(std::string& l) {
@@ -723,15 +768,52 @@ int SdpMedia::write(std::string& l) {
     }
     ss << "\r\n";
     l += ss.str();
+    for (unsigned int i = 0; i < children.size(); i++) {
+        children[i]->write(l);
+    }
+
     return 0;
 }
 int SdpAttr::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs));
+    if (val.size() > 0) {
+        ss << val;
+    }
+    ss << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpAttrRTCP::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+        << port << " "
+        << type2str(netType, gnets, ARR_LEN(gnets)) << " "
+        << type2str(addrType, gaddrs, ARR_LEN(gaddrs)) << " "
+        << addr
+        << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpAttrCandi::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+        << foundation << " "
+        << compID << " "
+        << transport << " "
+        << priority << " "
+        << addr << " "
+        << port << " "
+        << "typ " << type2str(candiType, gcandis, ARR_LEN(gcandis)) << " ";
+    if (relAddr.size()) {
+        ss << "raddr " << relAddr << " "
+            << "rport " << relPort << " ";
+    }
+    if (extName.size()) {
+        ss << extName << " " << extVal;
+    }
+    ss  << "\r\n";
+    l += ss.str();
     return -1;
 }
 

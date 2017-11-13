@@ -282,12 +282,11 @@ public:
 class SdpAttr : public SdpNode {
 public:
     SdpAttr(EAttrType t) : SdpNode(SDP_NODE_ATTRIBUTE), attrType(t) {}
-    SdpNode* clone() {return new SdpAttr(SDP_ATTR_NONE);}
+    SdpNode* clone() {return new SdpAttr(this->attrType);}
     int parse(std::string& l);
     int write(std::string& l);
 public:
     EAttrType   attrType;
-    std::string name;
     std::string val;
 };
 class SdpAttrRTCP : public SdpAttr {

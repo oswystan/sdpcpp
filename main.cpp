@@ -28,6 +28,9 @@ int main(int argc, const char *argv[]) {
                     "t=0 0\r\n" \
                     "c=IN IP4 10.1.1.10\r\n" \
                     "m=audio 9 UDP/TLS/RTP/SAVPF 111 103 104 9 0 8 106 105 13 110 112 113 126\r\n" \
+                    "a=sendrecv\r\n"
+                    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+                    "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host generation 2\r\n"
                     ;
     std::string out;
     int ret = reader.parse(in, root);
@@ -35,17 +38,21 @@ int main(int argc, const char *argv[]) {
         loge("fail to parse.");
         return ret;
     }
-    logi("parse ok");
     ret = writer.write(out, root);
     if (ret != 0) {
         loge("fail to write.");
         return ret;
     }
-    logi("write ok");
     if (in != out) {
         loge("in != out");
-        loge("in:%s", in.c_str());
-        loge("out:%s", out.c_str());
+        log("in:\n");
+        log("-------------------------------------------------\n");
+        log("%s", in.c_str());
+        log("-------------------------------------------------\n");
+        log("out:\n");
+        log("-------------------------------------------------\n");
+        log("%s", out.c_str());
+        log("-------------------------------------------------\n");
         return -1;
     }
     logi("success");
