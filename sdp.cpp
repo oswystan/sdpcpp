@@ -75,6 +75,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=ice-options:",   SDP_ATTR_ICE_OPTIONS, SdpAttr(SDP_ATTR_ICE_OPTIONS)),
     BUILD_TYPE("a=fingerprint:",   SDP_ATTR_FINGERPRINT, SdpAttr(SDP_ATTR_FINGERPRINT)),
     BUILD_TYPE("a=setup:",         SDP_ATTR_SETUP, SdpAttr(SDP_ATTR_SETUP)),
+    BUILD_TYPE("a=group:",         SDP_ATTR_GROUP, SdpAttr(SDP_ATTR_GROUP)),
     BUILD_TYPE("a=mid:",           SDP_ATTR_MID, SdpAttr(SDP_ATTR_MID)),
     BUILD_TYPE("a=extmap:",        SDP_ATTR_EXTMAP, SdpAttr(SDP_ATTR_EXTMAP)),
     BUILD_TYPE("a=rtcp-mux",       SDP_ATTR_RTCPMUX, SdpAttr(SDP_ATTR_RTCPMUX)),
@@ -83,7 +84,9 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=crypto:",        SDP_ATTR_CRYPTO, SdpAttr(SDP_ATTR_CRYPTO)),
     BUILD_TYPE("a=ssrc:",          SDP_ATTR_SSRC, SdpAttr(SDP_ATTR_SSRC)),
     BUILD_TYPE("a=ssrc-group:",    SDP_ATTR_SSRC_GROUP, SdpAttr(SDP_ATTR_SSRC_GROUP)),
+    BUILD_TYPE("a=msid:",          SDP_ATTR_MSID, SdpAttr(SDP_ATTR_MSID)),
     BUILD_TYPE("a=msid-semantic:", SDP_ATTR_MSID_SEMANTIC, SdpAttr(SDP_ATTR_MSID_SEMANTIC)),
+    BUILD_TYPE("a=sctpmap:",       SDP_ATTR_SCTPMAP, SdpAttr(SDP_ATTR_SCTPMAP)),
 };
 Type2Str gnets[] = {
     BUILD_TYPESTR("IN", SDP_NET_IN)
@@ -632,7 +635,7 @@ int SdpMedia::parse(std::string& l) {
         mediaType = lr.readMediaType();
         port = lr.readInt();
         proto = lr.readProtoType();
-        while(lr.pos < lr.val.size()-1) {
+        while(lr.pos < lr.val.size()) {
             int pload = lr.readInt();
             pt.push_back(pload);
         }

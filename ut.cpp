@@ -89,7 +89,7 @@ int main(int argc, const char *argv[]) {
         std::string str = ptr;
         int ret = reader.parse(str, session);
         if (ret != 0) {
-            printf("[FAILED] parse failed\n");
+            printf("[FAILED] %s\n", fl[i].c_str());
             return -1;
         }
         std::string rst;
