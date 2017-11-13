@@ -67,7 +67,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=lang:",          SDP_ATTR_LANG, SdpAttr(SDP_ATTR_LANG)),
     BUILD_TYPE("a=framerate:",     SDP_ATTR_FRAMERATE, SdpAttr(SDP_ATTR_FRAMERATE)),
     BUILD_TYPE("a=quality:",       SDP_ATTR_QUALITY, SdpAttr(SDP_ATTR_QUALITY)),
-    BUILD_TYPE("a=fmtp:",          SDP_ATTR_FMTP, SdpAttr(SDP_ATTR_FMTP)),
+    BUILD_TYPE("a=fmtp:",          SDP_ATTR_FMTP, SdpAttrFmtp),
     BUILD_TYPE("a=rtcp:",          SDP_ATTR_RTCP, SdpAttrRTCP),
     BUILD_TYPE("a=candidate:",     SDP_ATTR_CANDIDATE, SdpAttrCandi),
     BUILD_TYPE("a=ice-ufrag:",     SDP_ATTR_ICE_UFRAG, SdpAttr(SDP_ATTR_ICE_UFRAG)),
@@ -80,7 +80,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=extmap:",        SDP_ATTR_EXTMAP, SdpAttr(SDP_ATTR_EXTMAP)),
     BUILD_TYPE("a=rtcp-mux",       SDP_ATTR_RTCPMUX, SdpAttr(SDP_ATTR_RTCPMUX)),
     BUILD_TYPE("a=rtcp-rsize",     SDP_ATTR_RTCPRSIZE, SdpAttr(SDP_ATTR_RTCPRSIZE)),
-    BUILD_TYPE("a=rtcp-fb:",       SDP_ATTR_RTCPFB, SdpAttr(SDP_ATTR_RTCPFB)),
+    BUILD_TYPE("a=rtcp-fb:",       SDP_ATTR_RTCPFB, SdpAttrRTCPFB),
     BUILD_TYPE("a=crypto:",        SDP_ATTR_CRYPTO, SdpAttr(SDP_ATTR_CRYPTO)),
     BUILD_TYPE("a=ssrc:",          SDP_ATTR_SSRC, SdpAttr(SDP_ATTR_SSRC)),
     BUILD_TYPE("a=ssrc-group:",    SDP_ATTR_SSRC_GROUP, SdpAttr(SDP_ATTR_SSRC_GROUP)),
@@ -670,6 +670,30 @@ int SdpAttrRtpMap::parse(std::string& l) {
     }
     return 0;
 }
+int SdpAttrRTCPFB::parse(std::string& l) {
+    LineReader lr(l);
+    lr.skip(':');
+    try {
+        pt = lr.readInt();
+        param = lr.val.substr(lr.pos);
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
+}
+int SdpAttrFmtp::parse(std::string& l) {
+    LineReader lr(l);
+    lr.skip(':');
+    try {
+        pt = lr.readInt();
+        param = lr.val.substr(lr.pos);
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
+}
 int SdpAttrRTCP::parse(std::string& l) {
     LineReader lr(l);
     lr.skip(':');
@@ -824,6 +848,24 @@ int SdpAttrRtpMap::write(std::string& l) {
     l += ss.str();
     return 0;
 }
+int SdpAttrRTCPFB::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+        << pt << " "
+        << param
+        << "\r\n";
+    l += ss.str();
+    return 0;
+}
+int SdpAttrFmtp::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+        << pt << " "
+        << param
+        << "\r\n";
+    l += ss.str();
+    return 0;
+}
 int SdpAttrRTCP::write(std::string& l) {
     std::stringstream ss;
     ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
@@ -863,6 +905,37 @@ int SdpMedia::filter(int pt) {
             supportedPTs.erase(supportedPTs.begin()+i);
         }
     }
+    if (!children.size()) {
+       return 0;
+    }
+    for (unsigned int i = children.size()-1; i > 0; i--) {
+        if (children[i]->nodeType != SDP_NODE_ATTRIBUTE) {
+            continue;
+        }
+        SdpAttr* attr = (SdpAttr*)children[i];
+        if (attr->attrType == SDP_ATTR_RTPMAP) {
+            SdpAttrRtpMap* rtpmap = (SdpAttrRtpMap*)attr;
+            if (rtpmap->pt != pt) {
+                children.erase(children.begin() + i);
+            }
+            continue;
+        }
+        if (attr->attrType == SDP_ATTR_FMTP) {
+            SdpAttrFmtp* fmtp = (SdpAttrFmtp*)attr;
+            if (fmtp->pt != pt) {
+                children.erase(children.begin() + i);
+            }
+            continue;
+        }
+        if (attr->attrType == SDP_ATTR_RTCPFB) {
+            SdpAttrRTCPFB* rtcpfb = (SdpAttrRTCPFB*)attr;
+            if (rtcpfb->pt != pt) {
+                children.erase(children.begin() + i);
+            }
+            continue;
+        }
+    }
+
     return 0;
 }
 int SdpMedia::reject() {

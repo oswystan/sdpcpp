@@ -315,6 +315,26 @@ public:
     std::string enc;
     std::string param;
 };
+class SdpAttrRTCPFB : public SdpAttr {
+public:
+    SdpAttrRTCPFB() : SdpAttr(SDP_ATTR_RTCPFB) {}
+    SdpNode* clone() {return new SdpAttrRTCPFB;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    int pt;
+    std::string param;
+};
+class SdpAttrFmtp : public SdpAttr {
+public:
+    SdpAttrFmtp() : SdpAttr(SDP_ATTR_FMTP) {}
+    SdpNode* clone() {return new SdpAttrFmtp;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    int pt;
+    std::string param;
+};
 class SdpAttrRTCP : public SdpAttr {
 public:
     SdpAttrRTCP() : SdpAttr(SDP_ATTR_RTCP) {}
