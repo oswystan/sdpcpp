@@ -15,6 +15,7 @@ src := $(wildcard *.c *.cpp)
 obj := $(src:.c=.o)
 obj := $(obj:.cpp=.o)
 ld_flags :=
+c_flags := -Wall -Werror
 
 all: $(bin)
 
@@ -24,10 +25,10 @@ $(bin): $(obj)
 	@echo "[gen] "$@
 %.o:%.c
 	@echo "[ cc] "$@
-	@gcc -c $< -o $@
+	@gcc $(c_flags) -c $< -o $@
 %.o:%.cpp $(header)
 	@echo "[cpp] "$@
-	@g++ -std=c++11 -c $< -o $@
+	@g++ -std=c++11 $(c_flags) -c $< -o $@
 
 clean:
 	@echo "cleaning..."

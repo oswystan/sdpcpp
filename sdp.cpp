@@ -11,6 +11,8 @@
  */
 #include <string.h>
 #include <algorithm>
+#include <string>
+#include <sstream>
 
 #define LOG_TAG "sdp"
 #include "log.h"
@@ -21,6 +23,7 @@ namespace sdp {
 //==================================================
 //     type 2 str utils
 //==================================================
+#define _UNUSED_ __attribute__((unused))
 #define BUILD_TYPE(s,t,n) {.type = t,  .str = s, .node = new n}
 #define ARR_LEN(x) (sizeof(x)/sizeof(x[0]))
 struct Type2Str {
@@ -29,21 +32,21 @@ struct Type2Str {
     SdpNode* node;
 };
 Type2Str gnodes[] = {
-    BUILD_TYPE("v", SDP_NODE_VERSION, SdpVersion),
-    BUILD_TYPE("o", SDP_NODE_ORIGIN, SdpOrigin),
-    BUILD_TYPE("s", SDP_NODE_SESSION_NAME, SdpSessName),
-    BUILD_TYPE("i", SDP_NODE_SESSION_INFORMATION, SdpSessInfo),
-    BUILD_TYPE("u", SDP_NODE_URI, SdpUri),
-    BUILD_TYPE("e", SDP_NODE_EMAIL, SdpEmail),
-    BUILD_TYPE("p", SDP_NODE_PHONE, SdpPhone),
-    BUILD_TYPE("c", SDP_NODE_CONNECTION, SdpConn),
-    BUILD_TYPE("b", SDP_NODE_BANDWIDTH, SdpNone),
-    BUILD_TYPE("z", SDP_NODE_TZ, SdpNone),
-    BUILD_TYPE("k", SDP_NODE_ENCRYPTION, SdpNone),
-    BUILD_TYPE("t", SDP_NODE_TIME, SdpTime),
-    BUILD_TYPE("r", SDP_NODE_REPEAT, SdpNone),
-    BUILD_TYPE("m", SDP_NODE_MEDIA, SdpMedia),
-    BUILD_TYPE("a", SDP_NODE_ATTRIBUTE, SdpAttr(SDP_ATTR_NONE))
+    BUILD_TYPE("v=", SDP_NODE_VERSION, SdpVersion),
+    BUILD_TYPE("o=", SDP_NODE_ORIGIN, SdpOrigin),
+    BUILD_TYPE("s=", SDP_NODE_SESSION_NAME, SdpSessName),
+    BUILD_TYPE("i=", SDP_NODE_SESSION_INFORMATION, SdpSessInfo),
+    BUILD_TYPE("u=", SDP_NODE_URI, SdpUri),
+    BUILD_TYPE("e=", SDP_NODE_EMAIL, SdpEmail),
+    BUILD_TYPE("p=", SDP_NODE_PHONE, SdpPhone),
+    BUILD_TYPE("c=", SDP_NODE_CONNECTION, SdpConn),
+    BUILD_TYPE("b=", SDP_NODE_BANDWIDTH, SdpNone),
+    BUILD_TYPE("z=", SDP_NODE_TZ, SdpNone),
+    BUILD_TYPE("k=", SDP_NODE_ENCRYPTION, SdpNone),
+    BUILD_TYPE("t=", SDP_NODE_TIME, SdpTime),
+    BUILD_TYPE("r=", SDP_NODE_REPEAT, SdpNone),
+    BUILD_TYPE("m=", SDP_NODE_MEDIA, SdpMedia),
+    BUILD_TYPE("a=", SDP_NODE_ATTRIBUTE, SdpAttr(SDP_ATTR_NONE))
 };
 Type2Str gattrs[] = {
     BUILD_TYPE("a=cat:",           SDP_ATTR_CAT, SdpAttr(SDP_ATTR_CAT)),
@@ -79,7 +82,7 @@ static int str2type(const char* s, Type2Str* ts, unsigned int size) {
     }
     return 0;
 }
-static const char* type2str(int type, Type2Str* ts, unsigned int size) {
+static _UNUSED_ const char* type2str(int type, Type2Str* ts, unsigned int size) {
     for (unsigned int i = 0; i < size; i++) {
         if (ts[i].type == type) {
             return ts[i].str;
@@ -129,6 +132,94 @@ void split(std::string& s, std::vector<std::string>& lines) {
         last = idx + 1;
         idx = s.find_first_of("\n", last);
     }
+}
+
+//==================================================
+//     line reader
+//==================================================
+class ParseException : public std::exception {
+public:
+    ParseException(const char* str) : s(str) {}
+    const char* what() const throw() { return s.c_str(); }
+private:
+    std::string s;
+};
+class LineReader {
+public:
+    LineReader(std::string& s): val(s), pos(0) {}
+    void skip(char delim = ' ');
+    void forward(unsigned int to);
+    std::string readStr(char delim = ' ');
+    int readInt(char delim = ' ');
+    uint64_t readUint64(char delim = ' ');
+private:
+    std::string readToken(char delim = ' ');
+
+public:
+    std::string& val;
+    unsigned int pos;
+};
+void LineReader::skip(char delim) {
+    unsigned int i = val.find_first_of(delim, pos);
+    if (i != std::string::npos) {
+        pos = i+1;
+    } else {
+        pos = val.size();
+    }
+}
+void LineReader::forward(unsigned int to) {
+    if (to >= val.size()) {
+        pos = val.size();
+    } else {
+        pos = to;
+    }
+}
+std::string LineReader::readToken(char delim) {
+    unsigned int old = pos;
+    unsigned int i = val.find_first_of(delim, pos);
+    if (i != std::string::npos) {
+        pos = i+1;
+        return val.substr(old, i);
+    } else {
+        pos = val.size();
+        return val.substr(old, i);
+    }
+}
+std::string LineReader::readStr(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    return str;
+}
+int LineReader::readInt(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    auto it = str.begin();
+    while(it != str.end()) {
+        if (!std::isdigit(*it)) {
+            throw ParseException("Not a digital");
+            break;
+        }
+        it++;
+    }
+    return atoi(str.c_str());
+}
+uint64_t LineReader::readUint64(char delim) {
+    std::string str = readToken(delim);
+    if (str.size() == 0) {
+        throw ParseException("no token found");
+    }
+    auto it = str.begin();
+    while(it != str.end()) {
+        if (!std::isdigit(*it)) {
+            throw ParseException("Not a digital");
+            break;
+        }
+    }
+    return strtoull(str.c_str(), NULL, 10);
 }
 
 //==================================================
@@ -188,7 +279,7 @@ int SdpReader::parse(std::string& s, SdpRoot& root) {
         parent->children.push_back(node);
     }
 
-    return -1;
+    return 0;
 }
 
 int SdpWriter::write(std::string& s, SdpRoot& sdp) {
@@ -326,7 +417,15 @@ int SdpNode::write(std::string& l) {
 //     sdp sub classes
 //==================================================
 int SdpVersion::parse(std::string& l) {
-    return -1;
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        version = lr.readInt();
+    } catch (std::exception& e) {
+        loge("%s", e.what());
+        return -1;
+    }
+    return 0;
 }
 int SdpOrigin::parse(std::string& l) {
     return -1;
@@ -366,7 +465,11 @@ int SdpAttrCandi::parse(std::string& l) {
 }
 
 int SdpVersion::write(std::string& l) {
-    return -1;
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes))
+        << version << "\r\n";
+    l += ss.str();
+    return 0;
 }
 int SdpOrigin::write(std::string& l) {
     return -1;
