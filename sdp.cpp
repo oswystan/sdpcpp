@@ -9,6 +9,7 @@
  *       Revision:  initial draft;
  **************************************************************************************
  */
+#include <string.h>
 #include <algorithm>
 
 #define LOG_TAG "sdp"
@@ -103,16 +104,117 @@ static SdpAttr* type2attr(int type, Type2Str* ts, unsigned int size) {
     return NULL;
 }
 
+//==================================================
+//     string utils
+//==================================================
+void ltrim(std::string& s) {
+    s.erase(0, s.find_first_not_of(' '));
+}
+void rtrim(std::string& s) {
+    s.erase(s.find_last_not_of('\r') + 1);
+    s.erase(s.find_last_not_of(' ') + 1);
+}
+void trim(std::string& s) {
+    ltrim(s);
+    rtrim(s);
+}
+void split(std::string& s, std::vector<std::string>& lines) {
+    size_t last = 0;
+    size_t idx = s.find_first_of("\n");
+    std::string str;
+    while(idx != std::string::npos) {
+        str = s.substr(last, idx-last);
+        trim(str);
+        lines.push_back(str);
+        last = idx + 1;
+        idx = s.find_first_of("\n", last);
+    }
+}
 
 //==================================================
 //     sdp reader and writer
 //==================================================
-int SdpReader::parse(std::string& s, SdpRoot& sdp) {
-    return 0;
+int SdpReader::parse(std::string& s, SdpRoot& root) {
+    std::vector<std::string> lines;
+    ENodeType nType;
+    EAttrType aType;
+    SdpNode* node = NULL;
+    SdpNode* parent = &root;
+    int ret = 0;
+
+    split(s, lines);
+    for (unsigned int i = 0; i < lines.size(); i++) {
+        //skip empty line
+        if (lines[i].size() == 0) {
+            continue;
+        }
+
+        //create node
+        nType = SdpFactory::getNodeType(lines[i]);
+        if (nType == SDP_NODE_NONE) {
+            loge("invalid sdp: [%s] @ %d", lines[i].c_str(), i+1);
+            return -1;
+        }
+        if (nType != SDP_NODE_ATTRIBUTE) {
+            node = SdpFactory::createNode(nType);
+            ret = node->parse(lines[i]);
+            if (ret != 0) {
+                loge("fail to parse: [%s] @ %d", lines[i].c_str(), i+1);
+                delete node;
+                return -1;
+            }
+            if (nType == SDP_NODE_MEDIA) {
+                root.children.push_back(node);
+                parent = node;
+            } else {
+                parent->children.push_back(node);
+            }
+            continue;
+        }
+
+        //create attributes if node type is SDP_ATTRIBUTE
+        aType = SdpFactory::getAttrType(lines[i]);
+        if (aType == SDP_ATTR_NONE) {
+            loge("invalid sdp: [%s] @ %d", lines[i].c_str(), i+1);
+            return -1;
+        }
+        node = SdpFactory::createAttr(aType);
+        ret = node->parse(lines[i]);
+        if (ret != 0) {
+            loge("fail to parse: [%s] @ %d", lines[i].c_str(), i+1);
+            delete node;
+            return -1;
+        }
+        parent->children.push_back(node);
+    }
+
+    return -1;
 }
 
-int SdpWriter::writeTo(std::string& s, SdpRoot& sdp) {
-    return 0;
+int SdpWriter::write(std::string& s, SdpRoot& sdp) {
+    return sdp.write(s);
+}
+
+//==================================================
+//     sdp factory
+//==================================================
+ENodeType SdpFactory::getNodeType(std::string& l) {
+    return (ENodeType)str2type(l.c_str(), gnodes, ARR_LEN(gnodes));
+}
+EAttrType SdpFactory::getAttrType(std::string& l) {
+    return (EAttrType)str2type(l.c_str(), gattrs, ARR_LEN(gattrs));
+}
+SdpNode* SdpFactory::createNode(ENodeType type) {
+    SdpNode* n = type2node(type, gnodes, ARR_LEN(gnodes));
+    if (n) return n->clone();
+    return NULL;
+}
+SdpAttr* SdpFactory::createAttr(EAttrType type) {
+    SdpAttr* attr = type2attr(type, gattrs, ARR_LEN(gattrs));
+    if (attr) {
+        return (SdpAttr*)(attr->clone());
+    }
+    return NULL;
 }
 
 //==================================================
@@ -141,7 +243,6 @@ int SdpNode::remove(SdpNode* n) {
     }
     return 0;
 }
-
 int SdpNode::find(ENodeType t,  SdpNode*& n) {
     n = NULL;
     for (unsigned int i = 0; i < children.size(); i++) {
@@ -211,27 +312,21 @@ int SdpNode::find(EMediaType t, std::vector<SdpMedia*> v) {
     std::for_each(children.begin(), children.end(), matcher);
     return 0;
 }
+int SdpNode::parse(std::string& l) {
+    return -1;
+}
+int SdpNode::write(std::string& l) {
+    for (unsigned int i = 0; i < children.size(); i++) {
+        children[i]->write(l);
+    }
+    return 0;
+}
 
 //==================================================
-//     sdp factory
+//     sdp sub classes
 //==================================================
-ENodeType SdpFactory::getNodeType(std::string& l) {
-    return (ENodeType)str2type(l.c_str(), gnodes, ARR_LEN(gnodes));
-}
-EAttrType SdpFactory::getAttrType(std::string& l) {
-    return (EAttrType)str2type(l.c_str(), gattrs, ARR_LEN(gattrs));
-}
-SdpNode* SdpFactory::createNode(ENodeType type) {
-    SdpNode* n = type2node(type, gnodes, ARR_LEN(gnodes));
-    if (n) return n->clone();
-    return NULL;
-}
-SdpAttr* SdpFactory::createAttr(EAttrType type) {
-    SdpAttr* attr = type2attr(type, gattrs, ARR_LEN(gattrs));
-    if (attr) {
-        return (SdpAttr*)(attr->clone());
-    }
-    return NULL;
+int SdpVersion::parse(std::string& l) {
+    return -1;
 }
 int SdpOrigin::parse(std::string& l) {
     return -1;
@@ -267,6 +362,46 @@ int SdpAttrRTCP::parse(std::string& l) {
     return -1;
 }
 int SdpAttrCandi::parse(std::string& l) {
+    return -1;
+}
+
+int SdpVersion::write(std::string& l) {
+    return -1;
+}
+int SdpOrigin::write(std::string& l) {
+    return -1;
+}
+int SdpSessName::write(std::string& l) {
+    return -1;
+}
+int SdpSessInfo::write(std::string& l) {
+    return -1;
+}
+int SdpUri::write(std::string& l) {
+    return -1;
+}
+int SdpEmail::write(std::string& l) {
+    return -1;
+}
+int SdpPhone::write(std::string& l) {
+    return -1;
+}
+int SdpTime::write(std::string& l) {
+    return -1;
+}
+int SdpConn::write(std::string& l) {
+    return -1;
+}
+int SdpMedia::write(std::string& l) {
+    return -1;
+}
+int SdpAttr::write(std::string& l) {
+    return -1;
+}
+int SdpAttrRTCP::write(std::string& l) {
+    return -1;
+}
+int SdpAttrCandi::write(std::string& l) {
     return -1;
 }
 

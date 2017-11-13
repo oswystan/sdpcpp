@@ -10,28 +10,31 @@
  **************************************************************************************
  */
 
-#include <stdio.h>
-class ABC {
-public:
-    ABC() {}
-    ~ABC() {}
-    virtual ABC* operator()() { printf("ABC\n"); return new ABC;}
-private:
-};
-
-class AAA : public ABC{
-public:
-    AAA() {}
-    ~AAA() {}
-    ABC* operator()() { printf("AAA\n"); return new AAA;}
-
-private:
-    /* data */
-};
+#define LOG_TAG "main"
+#include "log.h"
+#include "sdp.h"
 
 int main(int argc, const char *argv[]) {
-    ABC* abc = new AAA;
-    (*abc)();
+    sdp::SdpRoot root;
+    sdp::SdpReader reader;
+    sdp::SdpWriter writer;
+    std::string in = "v=0\r\n";
+    std::string out;
+    int ret = reader.parse(in, root);
+    if (ret != 0) {
+        loge("fail to parse.");
+        return ret;
+    }
+    ret = writer.write(out, root);
+    if (ret != 0) {
+        loge("fail to write.");
+        return ret;
+    }
+    if (in != out) {
+        loge("in != out");
+        return -1;
+    }
+    logi("success");
     return 0;
 }
 
