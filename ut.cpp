@@ -65,7 +65,7 @@ int listFiles(std::vector<std::string> &fl) {
     return 0;
 }
 
-int main(int argc, const char *argv[]) {
+int parseFiles(int argc, const char* argv[]) {
     std::vector<std::string> fl;
     unlink(writerFileName);
     if (argc == 2) {
@@ -111,6 +111,25 @@ int main(int argc, const char *argv[]) {
         }
         printf("[SUCCESS] %s\n", fl[i].c_str());
         free(ptr);
+    }
+    return 0;
+}
+
+int testMedia(int argc, const char* argv[]) {
+    return 0;
+}
+
+typedef int (*tc)(int argc, const char* argv[]);
+tc utcs[] = {
+    parseFiles,
+    testMedia
+};
+
+int main(int argc, const char *argv[]) {
+    for (unsigned int i = 0; i < sizeof(utcs)/sizeof(utcs[0]); i++) {
+        if (0 != (*utcs[i])(argc, argv)) {
+            return -1;
+        }
     }
     return 0;
 }
