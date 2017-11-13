@@ -96,7 +96,17 @@ enum EAttrType {
     SDP_ATTR_CANDIDATE,
     SDP_ATTR_ICE_UFRAG,
     SDP_ATTR_ICE_PWD,
+    SDP_ATTR_ICE_OPTIONS,
     SDP_ATTR_FINGERPRINT,
+    SDP_ATTR_SETUP,
+    SDP_ATTR_MID,
+    SDP_ATTR_EXTMAP,
+    SDP_ATTR_RTCPMUX,
+    SDP_ATTR_RTCPRSIZE,
+    SDP_ATTR_RTCPFB,
+    SDP_ATTR_CRYPTO,
+    SDP_ATTR_SSRC,
+    SDP_ATTR_SSRC_GROUP,
     SDP_ATTR_MSID_SEMANTIC,
 };
 enum ECandiType {
@@ -268,11 +278,13 @@ class SdpMedia : public SdpNode {
 public:
     SdpMedia() : SdpNode(SDP_NODE_MEDIA) {}
     SdpNode* clone() {return new SdpMedia;}
+
     int parse(std::string& l);
     int write(std::string& l);
+
     int filter(int pt);
     int reject(int pt);
-
+    int getPT(std::string& codec);
 public:
     EMediaType       mediaType;
     uint16_t         port;

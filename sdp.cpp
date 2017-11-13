@@ -55,7 +55,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=tool:",          SDP_ATTR_TOOL, SdpAttr(SDP_ATTR_TOOL)),
     BUILD_TYPE("a=ptime:",         SDP_ATTR_PTIME, SdpAttr(SDP_ATTR_PTIME)),
     BUILD_TYPE("a=maxptime:",      SDP_ATTR_MAXPTIME, SdpAttr(SDP_ATTR_MAXPTIME)),
-    BUILD_TYPE("a=rptmap:",        SDP_ATTR_RTPMAP, SdpAttr(SDP_ATTR_RTPMAP)),
+    BUILD_TYPE("a=rtpmap:",        SDP_ATTR_RTPMAP, SdpAttr(SDP_ATTR_RTPMAP)),
     BUILD_TYPE("a=recvonly",       SDP_ATTR_RECVONLY, SdpAttr(SDP_ATTR_RECVONLY)),
     BUILD_TYPE("a=sendrecv",       SDP_ATTR_SENDRECV, SdpAttr(SDP_ATTR_SENDRECV)),
     BUILD_TYPE("a=sendonly",       SDP_ATTR_SENDONLY, SdpAttr(SDP_ATTR_SENDONLY)),
@@ -72,7 +72,17 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=candidate:",     SDP_ATTR_CANDIDATE, SdpAttrCandi),
     BUILD_TYPE("a=ice-ufrag:",     SDP_ATTR_ICE_UFRAG, SdpAttr(SDP_ATTR_ICE_UFRAG)),
     BUILD_TYPE("a=ice-pwd:",       SDP_ATTR_ICE_PWD, SdpAttr(SDP_ATTR_ICE_PWD)),
+    BUILD_TYPE("a=ice-options:",   SDP_ATTR_ICE_OPTIONS, SdpAttr(SDP_ATTR_ICE_OPTIONS)),
     BUILD_TYPE("a=fingerprint:",   SDP_ATTR_FINGERPRINT, SdpAttr(SDP_ATTR_FINGERPRINT)),
+    BUILD_TYPE("a=setup:",         SDP_ATTR_SETUP, SdpAttr(SDP_ATTR_SETUP)),
+    BUILD_TYPE("a=mid:",           SDP_ATTR_MID, SdpAttr(SDP_ATTR_MID)),
+    BUILD_TYPE("a=extmap:",        SDP_ATTR_EXTMAP, SdpAttr(SDP_ATTR_EXTMAP)),
+    BUILD_TYPE("a=rtcp-mux",       SDP_ATTR_RTCPMUX, SdpAttr(SDP_ATTR_RTCPMUX)),
+    BUILD_TYPE("a=rtcp-rsize",     SDP_ATTR_RTCPRSIZE, SdpAttr(SDP_ATTR_RTCPRSIZE)),
+    BUILD_TYPE("a=rtcp-fb:",       SDP_ATTR_RTCPFB, SdpAttr(SDP_ATTR_RTCPFB)),
+    BUILD_TYPE("a=crypto:",        SDP_ATTR_CRYPTO, SdpAttr(SDP_ATTR_CRYPTO)),
+    BUILD_TYPE("a=ssrc:",          SDP_ATTR_SSRC, SdpAttr(SDP_ATTR_SSRC)),
+    BUILD_TYPE("a=ssrc-group:",    SDP_ATTR_SSRC_GROUP, SdpAttr(SDP_ATTR_SSRC_GROUP)),
     BUILD_TYPE("a=msid-semantic:", SDP_ATTR_MSID_SEMANTIC, SdpAttr(SDP_ATTR_MSID_SEMANTIC)),
 };
 Type2Str gnets[] = {
@@ -90,11 +100,11 @@ Type2Str gmedias[] = {
     BUILD_TYPESTR("message", SDP_MEDIA_MESSAGE)
 };
 Type2Str gprotos[] = {
-    BUILD_TYPESTR("udp", SDP_PROTO_UDP),
-    BUILD_TYPESTR("RTP/AVP", SDP_PROTO_RTP_AVP),
-    BUILD_TYPESTR("RTP/SAVP", SDP_PROTO_RTP_SAVP),
-    BUILD_TYPESTR("RTP/SAVPF", SDP_PROTO_RTP_SAVPF),
     BUILD_TYPESTR("UDP/TLS/RTP/SAVPF", SDP_PROTO_RTP_UDP2SAVPF),
+    BUILD_TYPESTR("RTP/SAVPF", SDP_PROTO_RTP_SAVPF),
+    BUILD_TYPESTR("RTP/SAVP", SDP_PROTO_RTP_SAVP),
+    BUILD_TYPESTR("RTP/AVP", SDP_PROTO_RTP_AVP),
+    BUILD_TYPESTR("udp", SDP_PROTO_UDP),
 };
 Type2Str gcandis[] = {
     BUILD_TYPESTR("host", SDP_CANDI_HOST),
@@ -358,7 +368,7 @@ int SdpReader::parse(std::string& s, SdpRoot& root) {
         //create attributes if node type is SDP_ATTRIBUTE
         aType = SdpFactory::getAttrType(lines[i]);
         if (aType == SDP_ATTR_NONE) {
-            loge("invalid sdp: [%s] @ line: %d", lines[i].c_str(), i+1);
+            loge("invalid attribute: [%s] @ line: %d", lines[i].c_str(), i+1);
             return -1;
         }
         node = SdpFactory::createAttr(aType);
@@ -816,6 +826,17 @@ int SdpAttrCandi::write(std::string& l) {
     l += ss.str();
     return -1;
 }
+
+int SdpMedia::filter(int pt) {
+    return -1;
+}
+int SdpMedia::reject(int pt) {
+    return -1;
+}
+int SdpMedia::getPT(std::string& codec) {
+    return -1;
+}
+
 
 };
 
