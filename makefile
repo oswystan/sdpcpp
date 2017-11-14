@@ -10,15 +10,20 @@
 .PHONY: all clean
 
 bin := main
+lib := libsdp.a
 header := $(wildcard *.h)
 src := $(wildcard *.c *.cpp)
 obj := $(src:.c=.o)
 obj := $(obj:.cpp=.o)
 ld_flags :=
-c_flags := -Wall -Werror
+c_flags := -Wall -Werror -fPIC
 
-all: $(bin)
+all: $(bin) $(lib)
 
+$(lib) : sdp.o
+	@echo "[gen] "$@
+	@rm -f $@
+	@ar -r $@ $^ 2>/dev/null
 $(bin): $(obj)
 	@g++ $^ -o $(bin) $(ld_flags)
 	@strip $@
@@ -32,7 +37,7 @@ $(bin): $(obj)
 
 clean:
 	@echo "cleaning..."
-	@rm -f *.o $(bin)
+	@rm -f *.o $(bin) $(lib)
 	@echo "done."
 test: all
 	@echo "testing ..."
