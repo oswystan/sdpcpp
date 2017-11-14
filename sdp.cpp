@@ -915,21 +915,21 @@ int SdpMedia::filter(int pt) {
         SdpAttr* attr = (SdpAttr*)children[i];
         if (attr->attrType == SDP_ATTR_RTPMAP) {
             SdpAttrRtpMap* rtpmap = (SdpAttrRtpMap*)attr;
-            if (rtpmap->pt != pt) {
+            if (rtpmap->pt == pt) {
                 children.erase(children.begin() + i);
             }
             continue;
         }
         if (attr->attrType == SDP_ATTR_FMTP) {
             SdpAttrFmtp* fmtp = (SdpAttrFmtp*)attr;
-            if (fmtp->pt != pt) {
+            if (fmtp->pt == pt) {
                 children.erase(children.begin() + i);
             }
             continue;
         }
         if (attr->attrType == SDP_ATTR_RTCPFB) {
             SdpAttrRTCPFB* rtcpfb = (SdpAttrRTCPFB*)attr;
-            if (rtcpfb->pt != pt) {
+            if (rtcpfb->pt == pt) {
                 children.erase(children.begin() + i);
             }
             continue;

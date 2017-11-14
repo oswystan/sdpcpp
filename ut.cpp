@@ -116,19 +116,80 @@ int parseFiles(int argc, const char* argv[]) {
 }
 
 int testMedia(int argc, const char* argv[]) {
+    std::string src = \
+		"v=0\r\n"
+		"o=- 2178921783902026370 2 IN IP4 127.0.0.1\r\n"
+		"m=audio 9 UDP/TLS/RTP/SAVPF 111 103\r\n"
+		"a=rtpmap:111 opus/48000/2\r\n"
+		"a=rtpmap:103 ISAC/16000\r\n"
+		"a=rtcp-fb:111 transport-cc\r\n"
+		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
+		"m=video 9 UDP/TLS/RTP/SAVPF 100\r\n"
+		"a=rtpmap:100 H264/90000\r\n"
+		"a=rtcp-fb:100 ccm fir\r\n"
+		"a=rtcp-fb:100 nack\r\n"
+		"a=rtcp-fb:100 nack pli\r\n"
+		"a=rtcp-fb:100 goog-remb\r\n"
+		"a=rtcp-fb:100 transport-cc\r\n"
+		"a=fmtp:100 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n";
+    std::string dst = \
+		"v=0\r\n"
+		"o=- 2178921783902026370 2 IN IP4 127.0.0.1\r\n"
+		"m=audio 9 UDP/TLS/RTP/SAVPF 111\r\n"
+		"a=rtpmap:111 opus/48000/2\r\n"
+		"a=rtcp-fb:111 transport-cc\r\n"
+		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
+		"m=video 0 UDP/TLS/RTP/SAVPF 100\r\n"
+		"a=rtpmap:100 H264/90000\r\n"
+		"a=rtcp-fb:100 ccm fir\r\n"
+		"a=rtcp-fb:100 nack\r\n"
+		"a=rtcp-fb:100 nack pli\r\n"
+		"a=rtcp-fb:100 goog-remb\r\n"
+		"a=rtcp-fb:100 transport-cc\r\n"
+		"a=fmtp:100 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n";
+
+    sdp::SdpRoot root;
+    sdp::SdpReader reader;
+    sdp::SdpWriter writer;
+    reader.parse(src, root);
+    sdp::SdpMedia* vid;
+    sdp::SdpMedia* aud;
+    root.find(sdp::SDP_MEDIA_VIDEO, vid);
+    root.find(sdp::SDP_MEDIA_AUDIO, aud);
+    vid->reject();
+    std::string codec = "ISAC";
+    int pt = aud->getPT(codec);
+    aud->filter(pt);
+    std::string out;
+    writer.write(out, root);
+    if (out != dst) {
+        printf("*** *** *** *** *** *** *** *** *** ***\n");
+        printf("%s\n", dst.c_str());
+        printf("%s\n", out.c_str());
+        printf("*** *** *** *** *** *** *** *** *** ***\n");
+        return -1;
+    }
+
     return 0;
 }
 
-typedef int (*tc)(int argc, const char* argv[]);
-tc utcs[] = {
-    parseFiles,
-    testMedia
+#define BUILD_UTC(f) { .name=#f, .func=f }
+struct UTC {
+    const char* name;
+    int (*func)(int argc, const char* argv[]);
+};
+UTC utcs[] = {
+    BUILD_UTC(testMedia),
+    BUILD_UTC(parseFiles)
 };
 
 int main(int argc, const char *argv[]) {
     for (unsigned int i = 0; i < sizeof(utcs)/sizeof(utcs[0]); i++) {
-        if (0 != (*utcs[i])(argc, argv)) {
+        if (0 != (*utcs[i].func)(argc, argv)) {
+            printf("[FAILED] %s\n", utcs[i].name);
             return -1;
+        } else {
+            printf("[SUCCESS] %s\n", utcs[i].name);
         }
     }
     return 0;
