@@ -89,13 +89,13 @@ int parseFiles(int argc, const char* argv[]) {
         std::string str = ptr;
         int ret = reader.parse(str, session);
         if (ret != 0) {
-            printf("[FAILED] %s\n", fl[i].c_str());
+            printf("[FAIL] %s\n", fl[i].c_str());
             return -1;
         }
         std::string rst;
         writer.write(rst, session);
         if (str != rst) {
-            printf("[FAILED] %s rst != src", fl[i].c_str());
+            printf("[FAIL] %s rst != src", fl[i].c_str());
             int sz1 = str.size();
             int sz2 = rst.size();
             writeFile(rst.c_str(), sz2);
@@ -109,7 +109,7 @@ int parseFiles(int argc, const char* argv[]) {
             printf("\n");
             return -1;
         }
-        printf("[SUCCESS] %s\n", fl[i].c_str());
+        printf("[SUCC] %s\n", fl[i].c_str());
         free(ptr);
     }
     return 0;
@@ -186,10 +186,10 @@ UTC utcs[] = {
 int main(int argc, const char *argv[]) {
     for (unsigned int i = 0; i < sizeof(utcs)/sizeof(utcs[0]); i++) {
         if (0 != (*utcs[i].func)(argc, argv)) {
-            printf("[FAILED] %s\n", utcs[i].name);
+            printf("[FAIL] %s\n", utcs[i].name);
             return -1;
         } else {
-            printf("[SUCCESS] %s\n", utcs[i].name);
+            printf("[SUCC] %s\n", utcs[i].name);
         }
     }
     return 0;

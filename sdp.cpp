@@ -908,6 +908,8 @@ int SdpMedia::filter(int pt) {
     if (!children.size()) {
        return 0;
     }
+
+    //remove the attributes releated to the given pt
     for (unsigned int i = children.size()-1; i > 0; i--) {
         if (children[i]->nodeType != SDP_NODE_ATTRIBUTE) {
             continue;
@@ -917,6 +919,7 @@ int SdpMedia::filter(int pt) {
             SdpAttrRtpMap* rtpmap = (SdpAttrRtpMap*)attr;
             if (rtpmap->pt == pt) {
                 children.erase(children.begin() + i);
+                delete rtpmap;
             }
             continue;
         }
@@ -924,6 +927,7 @@ int SdpMedia::filter(int pt) {
             SdpAttrFmtp* fmtp = (SdpAttrFmtp*)attr;
             if (fmtp->pt == pt) {
                 children.erase(children.begin() + i);
+                delete fmtp;
             }
             continue;
         }
@@ -931,6 +935,7 @@ int SdpMedia::filter(int pt) {
             SdpAttrRTCPFB* rtcpfb = (SdpAttrRTCPFB*)attr;
             if (rtcpfb->pt == pt) {
                 children.erase(children.begin() + i);
+                delete rtcpfb;
             }
             continue;
         }
