@@ -124,6 +124,7 @@ int testMedia(int argc, const char* argv[]) {
 		"a=rtpmap:103 ISAC/16000\r\n"
 		"a=rtcp-fb:111 transport-cc\r\n"
 		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
+        "a=candidate:1 1 udp 2130706431 10.1.13.16 54781 typ host generation 0\r\n"
 		"a=ssrc:2252595259 cname:0/4IiULXLQNUx66b\r\n"
 		"a=ssrc:2252595259 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
 		"a=ssrc:2252595259 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
@@ -172,7 +173,10 @@ int testMedia(int argc, const char* argv[]) {
         "a=ssrc:3581258384 cname:0/4IiULXLQNUx66b\r\n"
         "a=ssrc:3581258384 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA 611901ad-da6e-42d8-884f-df151bb07b04\r\n"
         "a=ssrc:3581258384 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
-        "a=ssrc:3581258384 label:611901ad-da6e-42d8-884f-df151bb07b04\r\n";
+        "a=ssrc:3581258384 label:611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ice-ufrag:qhEz\r\n"
+        "a=ice-pwd:0pXkZeRzvMuO7ID0ZVCU+K\r\n"
+        "a=fingerprint:sha-256 A1:BF:26:D9:0C:41:A5:AB:4A:BE:34:73:AE:13:8E:00:76:57:C8:94:D2:AB:E5:33:10:0B:3B:9C:2C:67:30:FF\r\n";
 
     sdp::SdpRoot root;
     sdp::SdpReader reader;
@@ -182,7 +186,12 @@ int testMedia(int argc, const char* argv[]) {
     sdp::SdpMedia* aud;
     root.find(sdp::SDP_MEDIA_VIDEO, vid);
     root.find(sdp::SDP_MEDIA_AUDIO, aud);
+    aud->filter(sdp::SDP_ATTR_CANDIDATE);
     std::string codec = "ISAC";
+    std::string ufrag = "qhEz";
+    std::string pwd = "0pXkZeRzvMuO7ID0ZVCU+K";
+    std::string fp = "sha-256 A1:BF:26:D9:0C:41:A5:AB:4A:BE:34:73:AE:13:8E:00:76:57:C8:94:D2:AB:E5:33:10:0B:3B:9C:2C:67:30:FF";
+    vid->updateIce(ufrag, pwd, fp);
     uint32_t ssrc = aud->ssrc();
     if (ssrc != 2252595259) {
         printf("ERROR: invalid ssrc: [%u!=2252595259]\n", ssrc);

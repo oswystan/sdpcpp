@@ -1012,6 +1012,33 @@ int SdpMedia::addCandidate(SdpNode* n) {
     children.push_back(n);
     return 0;
 }
+int SdpMedia::updateIce(std::string ufrag, std::string pwd, std::string fp) {
+    SdpAttr* ice = NULL;
+
+    find(SDP_ATTR_ICE_UFRAG, ice);
+    if (ice == NULL) {
+        ice = new SdpAttr(SDP_ATTR_ICE_UFRAG);
+        children.push_back(ice);
+    }
+    ice->val = ufrag;
+
+    ice = NULL;
+    find(SDP_ATTR_ICE_PWD, ice);
+    if (ice == NULL) {
+        ice = new SdpAttr(SDP_ATTR_ICE_PWD);
+        children.push_back(ice);
+    }
+    ice->val = pwd;
+
+    ice = NULL;
+    find(SDP_ATTR_FINGERPRINT, ice);
+    if (ice == NULL) {
+        ice = new SdpAttr(SDP_ATTR_FINGERPRINT);
+        children.push_back(ice);
+    }
+    ice->val = fp;
+    return 0;
+}
 int SdpMedia::reject() {
     port = 0;
     return 0;

@@ -292,6 +292,7 @@ public:
     uint32_t ssrc();
     std::vector<uint32_t> ssrcGrp();
     int addCandidate(SdpNode* n);
+    int updateIce(std::string ufrag, std::string pwd, std::string fp);
 public:
     EMediaType       mediaType;
     uint16_t         port;
