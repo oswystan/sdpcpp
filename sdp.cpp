@@ -950,7 +950,7 @@ int SdpAttrSsrcGrp::write(std::string& l) {
 }
 
 int SdpMedia::filter(int pt) {
-    for(unsigned int i=supportedPTs.size()-1; i>0; i--) {
+    for(int i=supportedPTs.size()-1; i>=0; i--) {
         if (supportedPTs[i] == pt) {
             supportedPTs.erase(supportedPTs.begin()+i);
         }
@@ -960,7 +960,7 @@ int SdpMedia::filter(int pt) {
     }
 
     //remove the attributes releated to the given pt
-    for (unsigned int i = children.size()-1; i > 0; i--) {
+    for (int i = children.size()-1; i >= 0; i--) {
         if (children[i]->nodeType != SDP_NODE_ATTRIBUTE) {
             continue;
         }
@@ -991,6 +991,25 @@ int SdpMedia::filter(int pt) {
         }
     }
 
+    return 0;
+}
+int SdpMedia::filter(EAttrType aType) {
+    //remove the attributes of given type
+    for (int i = children.size()-1; i >= 0; i--) {
+        if (children[i]->nodeType != SDP_NODE_ATTRIBUTE) {
+            continue;
+        }
+        SdpAttr* attr = (SdpAttr*)children[i];
+        if (attr->attrType == aType) {
+            children.erase(children.begin() + i);
+            delete attr;
+        }
+    }
+
+    return 0;
+}
+int SdpMedia::addCandidate(SdpNode* n) {
+    children.push_back(n);
     return 0;
 }
 int SdpMedia::reject() {

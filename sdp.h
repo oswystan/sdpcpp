@@ -286,10 +286,12 @@ public:
     int write(std::string& l);
 
     int filter(int pt);
+    int filter(EAttrType aType);
     int reject();
     int getPT(std::string& codec);
     uint32_t ssrc();
     std::vector<uint32_t> ssrcGrp();
+    int addCandidate(SdpNode* n);
 public:
     EMediaType       mediaType;
     uint16_t         port;
@@ -358,7 +360,7 @@ public:
 public:
     std::string foundation;
     uint64_t    compID;
-    std::string transport;
+    std::string transport = "udp";
     uint64_t    priority;
     std::string addr;
     uint16_t    port;
