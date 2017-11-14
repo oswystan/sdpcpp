@@ -135,7 +135,16 @@ int testMedia(int argc, const char* argv[]) {
 		"a=rtcp-fb:100 nack pli\r\n"
 		"a=rtcp-fb:100 goog-remb\r\n"
 		"a=rtcp-fb:100 transport-cc\r\n"
-		"a=fmtp:100 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n";
+		"a=fmtp:100 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n"
+        "a=ssrc-group:FID 475778974 3581258384\r\n"
+        "a=ssrc:475778974 cname:0/4IiULXLQNUx66b\r\n"
+        "a=ssrc:475778974 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA 611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ssrc:475778974 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
+        "a=ssrc:475778974 label:611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ssrc:3581258384 cname:0/4IiULXLQNUx66b\r\n"
+        "a=ssrc:3581258384 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA 611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ssrc:3581258384 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
+        "a=ssrc:3581258384 label:611901ad-da6e-42d8-884f-df151bb07b04\r\n";
     std::string dst = \
 		"v=0\r\n"
 		"o=- 2178921783902026370 2 IN IP4 127.0.0.1\r\n"
@@ -154,7 +163,16 @@ int testMedia(int argc, const char* argv[]) {
 		"a=rtcp-fb:100 nack pli\r\n"
 		"a=rtcp-fb:100 goog-remb\r\n"
 		"a=rtcp-fb:100 transport-cc\r\n"
-		"a=fmtp:100 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n";
+		"a=fmtp:100 level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r\n"
+        "a=ssrc-group:FID 475778974 3581258384\r\n"
+        "a=ssrc:475778974 cname:0/4IiULXLQNUx66b\r\n"
+        "a=ssrc:475778974 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA 611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ssrc:475778974 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
+        "a=ssrc:475778974 label:611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ssrc:3581258384 cname:0/4IiULXLQNUx66b\r\n"
+        "a=ssrc:3581258384 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA 611901ad-da6e-42d8-884f-df151bb07b04\r\n"
+        "a=ssrc:3581258384 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
+        "a=ssrc:3581258384 label:611901ad-da6e-42d8-884f-df151bb07b04\r\n";
 
     sdp::SdpRoot root;
     sdp::SdpReader reader;
@@ -165,10 +183,15 @@ int testMedia(int argc, const char* argv[]) {
     root.find(sdp::SDP_MEDIA_VIDEO, vid);
     root.find(sdp::SDP_MEDIA_AUDIO, aud);
     std::string codec = "ISAC";
-    std::string ssrc = aud->ssrc();
-    if (ssrc != "2252595259") {
-        printf("ERROR: invalid ssrc: [%s!=2252595259]\n", ssrc.c_str());
+    uint32_t ssrc = aud->ssrc();
+    if (ssrc != 2252595259) {
+        printf("ERROR: invalid ssrc: [%u!=2252595259]\n", ssrc);
 		return -1;
+    }
+    std::vector<uint32_t> ssrcs = vid->ssrcGrp();
+    if (ssrcs.size() != 2 || ssrcs[0] != 475778974 || ssrcs[1] != 3581258384) {
+        printf("ERROR ssrcgrp not correct\n");
+        return -1;
     }
     vid->reject();
     int pt = aud->getPT(codec);

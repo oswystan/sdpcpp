@@ -288,7 +288,8 @@ public:
     int filter(int pt);
     int reject();
     int getPT(std::string& codec);
-    std::string ssrc();
+    uint32_t ssrc();
+    std::vector<uint32_t> ssrcGrp();
 public:
     EMediaType       mediaType;
     uint16_t         port;
@@ -374,9 +375,19 @@ public:
     int parse(std::string& l);
     int write(std::string& l);
 public:
-    std::string ssrc;
+    uint32_t ssrc;
     std::string attr;
     std::string val;
+};
+class SdpAttrSsrcGrp : public SdpAttr {
+public:
+    SdpAttrSsrcGrp() : SdpAttr(SDP_ATTR_SSRC_GROUP) {}
+    SdpNode* clone() {return new SdpAttrSsrcGrp;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    std::string semantics;
+    std::vector<uint32_t> ssrcs;
 };
 
 }; //namespace sdp
