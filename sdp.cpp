@@ -82,7 +82,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=rtcp-rsize",     SDP_ATTR_RTCPRSIZE, SdpAttr(SDP_ATTR_RTCPRSIZE)),
     BUILD_TYPE("a=rtcp-fb:",       SDP_ATTR_RTCPFB, SdpAttrRTCPFB),
     BUILD_TYPE("a=crypto:",        SDP_ATTR_CRYPTO, SdpAttr(SDP_ATTR_CRYPTO)),
-    BUILD_TYPE("a=ssrc:",          SDP_ATTR_SSRC, SdpAttr(SDP_ATTR_SSRC)),
+    BUILD_TYPE("a=ssrc:",          SDP_ATTR_SSRC, SdpAttrSsrc),
     BUILD_TYPE("a=ssrc-group:",    SDP_ATTR_SSRC_GROUP, SdpAttr(SDP_ATTR_SSRC_GROUP)),
     BUILD_TYPE("a=msid:",          SDP_ATTR_MSID, SdpAttr(SDP_ATTR_MSID)),
     BUILD_TYPE("a=msid-semantic:", SDP_ATTR_MSID_SEMANTIC, SdpAttr(SDP_ATTR_MSID_SEMANTIC)),
@@ -738,6 +738,21 @@ int SdpAttrCandi::parse(std::string& l) {
     }
     return 0;
 }
+int SdpAttrSsrc::parse(std::string& l) {
+    LineReader lr(l);
+    lr.skip(':');
+    try {
+        ssrc = lr.readStr();
+        attr = lr.readStr(':');
+        if (lr.pos < lr.val.size()) {
+            val = lr.val.substr(lr.pos);
+        }
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
+}
 
 int SdpVersion::write(std::string& l) {
     std::stringstream ss;
@@ -898,6 +913,16 @@ int SdpAttrCandi::write(std::string& l) {
     l += ss.str();
     return -1;
 }
+int SdpAttrSsrc::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+        << ssrc << " "
+        << attr;
+    if (val.size()) ss << ":" << val;
+    ss << "\r\n";
+    l += ss.str();
+    return 0;
+}
 
 int SdpMedia::filter(int pt) {
     for(unsigned int i=supportedPTs.size()-1; i>0; i--) {
@@ -964,6 +989,20 @@ int SdpMedia::getPT(std::string& codec) {
     };
     std::for_each(children.begin(), children.end(), matcher);
     return pt;
+}
+std::string SdpMedia::ssrc() {
+    auto matcher = [](SdpNode* n) {
+        if (n->nodeType != SDP_NODE_ATTRIBUTE) return false;
+        if(((SdpAttr*)n)->attrType != SDP_ATTR_SSRC) return false;
+        return true;
+    };
+    auto it = children.end();
+    it = std::find_if(children.begin(), children.end(), matcher);
+    if (it != children.end()) {
+        return ((SdpAttrSsrc*)(*it))->ssrc;
+    } else {
+        return "";
+    }
 }
 
 

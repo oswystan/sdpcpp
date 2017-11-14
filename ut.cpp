@@ -124,6 +124,10 @@ int testMedia(int argc, const char* argv[]) {
 		"a=rtpmap:103 ISAC/16000\r\n"
 		"a=rtcp-fb:111 transport-cc\r\n"
 		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
+		"a=ssrc:2252595259 cname:0/4IiULXLQNUx66b\r\n"
+		"a=ssrc:2252595259 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
+		"a=ssrc:2252595259 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
+		"a=ssrc:2252595259 label:fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
 		"m=video 9 UDP/TLS/RTP/SAVPF 100\r\n"
 		"a=rtpmap:100 H264/90000\r\n"
 		"a=rtcp-fb:100 ccm fir\r\n"
@@ -139,6 +143,10 @@ int testMedia(int argc, const char* argv[]) {
 		"a=rtpmap:111 opus/48000/2\r\n"
 		"a=rtcp-fb:111 transport-cc\r\n"
 		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
+		"a=ssrc:2252595259 cname:0/4IiULXLQNUx66b\r\n"
+		"a=ssrc:2252595259 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
+		"a=ssrc:2252595259 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
+		"a=ssrc:2252595259 label:fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
 		"m=video 0 UDP/TLS/RTP/SAVPF 100\r\n"
 		"a=rtpmap:100 H264/90000\r\n"
 		"a=rtcp-fb:100 ccm fir\r\n"
@@ -156,8 +164,13 @@ int testMedia(int argc, const char* argv[]) {
     sdp::SdpMedia* aud;
     root.find(sdp::SDP_MEDIA_VIDEO, vid);
     root.find(sdp::SDP_MEDIA_AUDIO, aud);
-    vid->reject();
     std::string codec = "ISAC";
+    std::string ssrc = aud->ssrc();
+    if (ssrc != "2252595259") {
+        printf("ERROR: invalid ssrc: [%s!=2252595259]\n", ssrc.c_str());
+		return -1;
+    }
+    vid->reject();
     int pt = aud->getPT(codec);
     aud->filter(pt);
     std::string out;

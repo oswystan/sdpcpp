@@ -288,6 +288,7 @@ public:
     int filter(int pt);
     int reject();
     int getPT(std::string& codec);
+    std::string ssrc();
 public:
     EMediaType       mediaType;
     uint16_t         port;
@@ -365,6 +366,17 @@ public:
     uint16_t    relPort;
     std::string extName;
     std::string extVal;
+};
+class SdpAttrSsrc : public SdpAttr {
+public:
+    SdpAttrSsrc() : SdpAttr(SDP_ATTR_SSRC) {}
+    SdpNode* clone() {return new SdpAttrSsrc;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    std::string ssrc;
+    std::string attr;
+    std::string val;
 };
 
 }; //namespace sdp
