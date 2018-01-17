@@ -41,7 +41,7 @@ Type2Str gnodes[] = {
     BUILD_TYPE("e=", SDP_NODE_EMAIL, SdpEmail),
     BUILD_TYPE("p=", SDP_NODE_PHONE, SdpPhone),
     BUILD_TYPE("c=", SDP_NODE_CONNECTION, SdpConn),
-    BUILD_TYPE("b=", SDP_NODE_BANDWIDTH, SdpNone),
+    BUILD_TYPE("b=", SDP_NODE_BANDWIDTH, SdpBandWidth),
     BUILD_TYPE("z=", SDP_NODE_TZ, SdpNone),
     BUILD_TYPE("k=", SDP_NODE_ENCRYPTION, SdpNone),
     BUILD_TYPE("t=", SDP_NODE_TIME, SdpTime),
@@ -645,6 +645,18 @@ int SdpMedia::parse(std::string& l) {
     }
     return 0;
 }
+int SdpBandWidth::parse(std::string& l) {
+    LineReader lr(l);
+    lr.skip('=');
+    try {
+        type = lr.readStr(':');
+        bw = lr.readInt();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
+}
 int SdpAttr::parse(std::string& l) {
     LineReader lr(l);
     lr.skip(':');
@@ -853,6 +865,13 @@ int SdpMedia::write(std::string& l) {
         children[i]->write(l);
     }
 
+    return 0;
+}
+int SdpBandWidth::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(nodeType, gnodes, ARR_LEN(gnodes));
+    ss << type << ":" << bw << "\r\n";
+    l += ss.str();
     return 0;
 }
 int SdpAttr::write(std::string& l) {
@@ -1090,7 +1109,18 @@ std::vector<uint32_t> SdpMedia::ssrcGrp() {
         return vec;
     }
 }
+int SdpMedia::inactive() {
+    for(auto it=children.begin(); it!=children.end(); it++) {
+        if((*it)->nodeType == SDP_NODE_ATTRIBUTE) continue;
+        SdpAttr* attr = (SdpAttr*)(*it);
+        if(attr->attrType == SDP_ATTR_INACTIVE) return 0;
+    }
 
+    //not find inactive then create one
+    SdpAttr* attr = new SdpAttr(SDP_ATTR_INACTIVE);
+    children.push_back(attr);
+    return 0;
+}
 
 };
 

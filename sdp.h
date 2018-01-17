@@ -288,8 +288,10 @@ public:
     int filter(int pt);
     int filter(EAttrType aType);
     int reject();
+    int inactive();
     int getPT(std::string& codec);
     uint32_t ssrc();
+    uint32_t bandwidth();
     std::vector<uint32_t> ssrcGrp();
     int addCandidate(SdpNode* n);
     int updateIce(std::string ufrag, std::string pwd, std::string fp);
@@ -298,6 +300,16 @@ public:
     uint16_t         port;
     EProtoType       proto;
     std::vector<int> supportedPTs;
+};
+class SdpBandWidth : public SdpNode {
+public:
+    SdpBandWidth() : SdpNode(SDP_NODE_BANDWIDTH) {}
+    SdpNode* clone() {return new SdpBandWidth;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    std::string type;
+    uint32_t    bw;
 };
 class SdpAttr : public SdpNode {
 public:

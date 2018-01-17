@@ -157,6 +157,7 @@ int testMedia(int argc, const char* argv[]) {
 		"a=ssrc:2252595259 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
 		"a=ssrc:2252595259 mslabel:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA\r\n"
 		"a=ssrc:2252595259 label:fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
+        "a=inactive\r\n"
 		"m=video 0 UDP/TLS/RTP/SAVPF 100\r\n"
 		"a=rtpmap:100 H264/90000\r\n"
 		"a=rtcp-fb:100 ccm fir\r\n"
@@ -187,6 +188,7 @@ int testMedia(int argc, const char* argv[]) {
     root.find(sdp::SDP_MEDIA_VIDEO, vid);
     root.find(sdp::SDP_MEDIA_AUDIO, aud);
     aud->filter(sdp::SDP_ATTR_CANDIDATE);
+    aud->inactive();
     std::string codec = "ISAC";
     std::string ufrag = "qhEz";
     std::string pwd = "0pXkZeRzvMuO7ID0ZVCU+K";

@@ -7,5 +7,7 @@ m=audio 49170 RTP/AVP 0 97
 a=rtpmap:0 PCMU/8000
 a=rtpmap:97 iLBC/8000
 m=audio 49172 RTP/AVP 98
+b=AS:50
+a=inactive
 a=rtpmap:98 telephone-event/8000
 a=sendonly
