@@ -1121,6 +1121,14 @@ int SdpMedia::inactive() {
     children.push_back(attr);
     return 0;
 }
+uint32_t SdpMedia::bandwidth() {
+    for(auto it=children.begin(); it!=children.end(); it++) {
+        if((*it)->nodeType != SDP_NODE_BANDWIDTH) continue;
+        SdpBandWidth* bw = (SdpBandWidth*)(*it);
+        return bw->bw;
+    }
+    return 0;
+}
 
 };
 

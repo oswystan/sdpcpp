@@ -123,6 +123,7 @@ int testMedia(int argc, const char* argv[]) {
 		"a=rtpmap:111 opus/48000/2\r\n"
 		"a=rtpmap:103 ISAC/16000\r\n"
 		"a=rtcp-fb:111 transport-cc\r\n"
+        "b=AS:50\r\n"
 		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
         "a=candidate:1 1 udp 2130706431 10.1.13.16 54781 typ host generation 0\r\n"
 		"a=ssrc:2252595259 cname:0/4IiULXLQNUx66b\r\n"
@@ -152,6 +153,7 @@ int testMedia(int argc, const char* argv[]) {
 		"m=audio 9 UDP/TLS/RTP/SAVPF 111\r\n"
 		"a=rtpmap:111 opus/48000/2\r\n"
 		"a=rtcp-fb:111 transport-cc\r\n"
+        "b=AS:50\r\n"
 		"a=fmtp:111 minptime=10;useinbandfec=1\r\n"
 		"a=ssrc:2252595259 cname:0/4IiULXLQNUx66b\r\n"
 		"a=ssrc:2252595259 msid:lmeZp9JTa2DAZOiTnGGwMaJlapGUxznQGIzA fca1a679-2996-4078-afe9-3c7d850b6568\r\n"
@@ -198,6 +200,11 @@ int testMedia(int argc, const char* argv[]) {
     if (ssrc != 2252595259) {
         printf("ERROR: invalid ssrc: [%u!=2252595259]\n", ssrc);
 		return -1;
+    }
+    uint32_t bandwidth = aud->bandwidth();
+    if(bandwidth != 50) {
+        printf("ERROR: incorrect audio bandwidth: %d!=50", bandwidth);
+        return -1;
     }
     std::vector<uint32_t> ssrcs = vid->ssrcGrp();
     if (ssrcs.size() != 2 || ssrcs[0] != 475778974 || ssrcs[1] != 3581258384) {
