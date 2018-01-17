@@ -111,6 +111,9 @@ enum EAttrType {
     SDP_ATTR_MSID,
     SDP_ATTR_MSID_SEMANTIC,
     SDP_ATTR_SCTPMAP,
+
+    // video resolution to be compatiable with helix server
+    SDP_ATTR_CLIPRECT,
 };
 enum ECandiType {
     SDP_CANDI_NONE,
@@ -403,6 +406,18 @@ public:
 public:
     std::string semantics;
     std::vector<uint32_t> ssrcs;
+};
+class SdpAttrClipRect : public SdpAttr {
+public:
+    SdpAttrClipRect() : SdpAttr(SDP_ATTR_CLIPRECT) {}
+    SdpNode* clone() {return new SdpAttrClipRect;}
+    int parse(std::string& l);
+    int write(std::string& l);
+public:
+    uint32_t x;
+    uint32_t y;
+    uint32_t w;
+    uint32_t h;
 };
 
 }; //namespace sdp

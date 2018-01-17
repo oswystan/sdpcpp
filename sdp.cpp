@@ -87,6 +87,7 @@ Type2Str gattrs[] = {
     BUILD_TYPE("a=msid:",          SDP_ATTR_MSID, SdpAttr(SDP_ATTR_MSID)),
     BUILD_TYPE("a=msid-semantic:", SDP_ATTR_MSID_SEMANTIC, SdpAttr(SDP_ATTR_MSID_SEMANTIC)),
     BUILD_TYPE("a=sctpmap:",       SDP_ATTR_SCTPMAP, SdpAttr(SDP_ATTR_SCTPMAP)),
+    BUILD_TYPE("a=cliprect:",      SDP_ATTR_CLIPRECT, SdpAttrClipRect),
 };
 Type2Str gnets[] = {
     BUILD_TYPESTR("IN", SDP_NET_IN)
@@ -779,6 +780,20 @@ int SdpAttrSsrcGrp::parse(std::string& l) {
     }
     return 0;
 }
+int SdpAttrClipRect::parse(std::string& l) {
+    LineReader lr(l);
+    lr.skip(':');
+    try {
+        x = lr.readInt(',');
+        y = lr.readInt(',');
+        w = lr.readInt(',');
+        h = lr.readInt();
+    } catch (std::exception& e) {
+        loge("pos[%lu]:%s", lr.pos, e.what());
+        return -1;
+    }
+    return 0;
+}
 
 int SdpVersion::write(std::string& l) {
     std::stringstream ss;
@@ -964,6 +979,14 @@ int SdpAttrSsrcGrp::write(std::string& l) {
         ss <<" " << ssrcs[i];
     }
     ss << "\r\n";
+    l += ss.str();
+    return 0;
+}
+int SdpAttrClipRect::write(std::string& l) {
+    std::stringstream ss;
+    ss << type2str(attrType, gattrs, ARR_LEN(gattrs))
+       << x << "," << y << "," << w << "," << h
+       << "\r\n";
     l += ss.str();
     return 0;
 }
