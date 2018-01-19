@@ -420,6 +420,11 @@ public:
     uint32_t h;
 };
 
+std::string generateCname();
+std::string generateLabel();
+std::string generateMslabel();
+std::string generateFoundation(const std::string& type, const std::string& protocol, const std::string& relay_protocol, const std::string& address);
+
 }; //namespace sdp
 
 #endif /*SDP_H_INCLUDED*/

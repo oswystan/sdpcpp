@@ -9,10 +9,12 @@
  *       Revision:  initial draft;
  **************************************************************************************
  */
+#include <openssl/rand.h>
 #include <string.h>
 #include <algorithm>
 #include <string>
 #include <sstream>
+#include <memory>
 
 #define LOG_TAG "sdp"
 #include "log.h"
@@ -1151,6 +1153,105 @@ uint32_t SdpMedia::bandwidth() {
         return bw->bw;
     }
     return 0;
+}
+
+static const char kBase64[64] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
+static const char kHex[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                              '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+static const char kUuidDigit17[4] = {'8', '9', 'a', 'b'};
+
+static std::string randomString(uint32_t len) {
+    std::string str;
+    str.reserve(len);
+    std::unique_ptr<uint8_t[]> bytes(new uint8_t[len]);
+    RAND_bytes(bytes.get(), len);
+    for(unsigned int i=0; i<len; i++) {
+        str.push_back(kBase64[bytes[i]%ARR_LEN(kBase64)]);
+    }
+    return str;
+}
+static std::string randomUUID() {
+    std::string str;
+    str.reserve(36);
+    std::unique_ptr<uint8_t[]> bytes(new uint8_t[31]);
+    for (size_t i = 0; i < 8; ++i) {
+        str.push_back(kHex[bytes[i] % 16]);
+    }
+    str.push_back('-');
+    for (size_t i = 8; i < 12; ++i) {
+        str.push_back(kHex[bytes[i] % 16]);
+    }
+    str.push_back('-');
+    str.push_back('4');
+    for (size_t i = 12; i < 15; ++i) {
+        str.push_back(kHex[bytes[i] % 16]);
+    }
+    str.push_back('-');
+    str.push_back(kUuidDigit17[bytes[15] % 4]);
+    for (size_t i = 16; i < 19; ++i) {
+        str.push_back(kHex[bytes[i] % 16]);
+    }
+    str.push_back('-');
+    for (size_t i = 19; i < 31; ++i) {
+        str.push_back(kHex[bytes[i] % 16]);
+    }
+    return str;
+}
+
+static const uint32_t kCrc32Polynomial = 0xEDB88320;
+static uint32_t kCrc32Table[256] = {0};
+static void EnsureCrc32TableInited() {
+  if (kCrc32Table[ARR_LEN(kCrc32Table) - 1])
+    return;  // already inited
+  for (uint32_t i = 0; i < ARR_LEN(kCrc32Table); ++i) {
+    uint32_t c = i;
+    for (size_t j = 0; j < 8; ++j) {
+      if (c & 1) {
+        c = kCrc32Polynomial ^ (c >> 1);
+      } else {
+        c >>= 1;
+      }
+    }
+    kCrc32Table[i] = c;
+  }
+}
+
+uint32_t UpdateCrc32(uint32_t start, const void* buf, size_t len) {
+  EnsureCrc32TableInited();
+
+  uint32_t c = start ^ 0xFFFFFFFF;
+  const uint8_t* u = static_cast<const uint8_t*>(buf);
+  for (size_t i = 0; i < len; ++i) {
+    c = kCrc32Table[(c ^ u[i]) & 0xFF] ^ (c >> 8);
+  }
+  return c ^ 0xFFFFFFFF;
+}
+
+std::string generateCname() {
+    return randomString(16);
+}
+
+std::string generateLabel() {
+    return randomUUID();
+}
+
+std::string generateMslabel() {
+    return randomString(36);
+}
+
+std::string generateFoundation(const std::string& type,
+    const std::string& protocol,
+    const std::string& relay_protocol,
+    const std::string& address) {
+    std::ostringstream oss;
+    oss << type << protocol << relay_protocol << address;
+    uint32_t crc = UpdateCrc32(0, oss.str().c_str(), oss.str().size());
+    return std::to_string(crc);
 }
 
 };

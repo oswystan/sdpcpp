@@ -15,7 +15,7 @@ header := $(wildcard *.h)
 src := $(wildcard *.c *.cpp)
 obj := $(src:.c=.o)
 obj := $(obj:.cpp=.o)
-ld_flags :=
+ld_flags := -lcrypto
 c_flags := -Wall -Werror -fPIC
 
 all: $(bin) $(lib)

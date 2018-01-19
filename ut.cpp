@@ -229,6 +229,22 @@ int testMedia(int argc, const char* argv[]) {
     return 0;
 }
 
+int testRand(int argc, const char* argv[]) {
+    std::string str = sdp::generateCname();
+    std::string type = "local";
+    std::string protocol = "udp";
+    std::string relay_protocol = "";
+    std::string ip = "10.10.1.1";
+    //printf("cname: %s\n", str.c_str());
+    str = sdp::generateLabel();
+    //printf("label: %s\n", str.c_str());
+    str = sdp::generateMslabel();
+    //printf("mslabel: %s\n", str.c_str());
+    str = sdp::generateFoundation(type, protocol, relay_protocol, ip);
+    //printf("foundation: %s\n", str.c_str());
+    return 0;
+}
+
 #define BUILD_UTC(f) { .name=#f, .func=f }
 struct UTC {
     const char* name;
@@ -236,7 +252,8 @@ struct UTC {
 };
 UTC utcs[] = {
     BUILD_UTC(testMedia),
-    BUILD_UTC(parseFiles)
+    BUILD_UTC(parseFiles),
+    BUILD_UTC(testRand)
 };
 
 int main(int argc, const char *argv[]) {
